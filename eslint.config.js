@@ -1,4 +1,4 @@
-import globals from 'globals';
+import globals from 'globals'
 
 export default [
   {
@@ -33,4 +33,4 @@ export default [
       'arrow-spacing': 1
     }
   }
-];
+]
