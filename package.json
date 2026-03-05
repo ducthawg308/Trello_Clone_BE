@@ -10,10 +10,14 @@
   },
   "scripts": {
     "lint": "eslint src --ext js --report-unused-disable-directives --max-warnings 0",
-    "dev": "nodemon ./src/server.js"
+    "clean": "rm -rf build && mkdir build",
+    "build": "npm run clean && cp -r src build",
+    "production": "npm run build && cross-env BUILD_MODE=production node ./build/src/server.js",
+    "dev": "cross-env BUILD_MODE=dev nodemon ./src/server.js"
   },
   "dependencies": {
     "async-exit-hook": "^2.0.1",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "express": "^4.19.2",
     "http-status-codes": "^2.3.0",
