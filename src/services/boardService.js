@@ -1,5 +1,5 @@
-import ApiError from '../utils/ApiError.js'
 import { slugify } from '../utils/formatters.js'
+import { boardModel } from '../models/boardModel.js'
 
 const createNew = async (reqBody) => {
   try {
@@ -8,7 +8,10 @@ const createNew = async (reqBody) => {
       slug: slugify(reqBody.title)
     }
 
-    return newBoard
+    const createdBoard = await boardModel.createNew(newBoard)
+    const getNewBoard = await boardModel.findOneById(createdBoard.insertedId)
+
+    return getNewBoard
   } catch (error) {
     throw error
   }
