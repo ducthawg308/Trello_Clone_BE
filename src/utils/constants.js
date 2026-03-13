@@ -1,3 +1,5 @@
+import { env } from '../config/environment.js'
+
 export const WHITELIST_DOMAINS = [
   'https://trello-clone-fe-one.vercel.app'
 ]
@@ -6,3 +8,5 @@ export const BOARD_TYPES = {
   PUBLIC: 'public',
   PRIVATE: 'private'
 }
+
+export const WEBSITE_DOMAIN = (env.BUILD_MODE === 'production') ? env.WEBSITE_DOMAIN_PRODUCTION : env.WEBSITE_DOMAIN_DEVELOPMENT

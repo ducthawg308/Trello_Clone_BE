@@ -4,6 +4,8 @@ import { StatusCodes } from 'http-status-codes'
 import bcryptjs from 'bcryptjs'
 import { v4 as uuidv4} from 'uuid'
 import { pickUser } from '../utils/formatters.js'
+import { WEBSITE_DOMAIN } from '../utils/constants.js'
+import { BrevoProvider } from '../providers/BrevoProvider.js'
 
 const createNew = async (reqBody) => {
   try {
@@ -13,7 +15,7 @@ const createNew = async (reqBody) => {
       throw new ApiError(StatusCodes.CONFLICT, 'Email already exists!')
     }
     // Tạo data để lưu vào DB
-    const nameFromEmail =  reqBody.email.split('@')[0]
+    const nameFromEmail = reqBody.email.split('@')[0]
     const newUser = {
       email: reqBody.email,
       password: bcryptjs.hashSync(reqBody.password, 8),
@@ -25,6 +27,13 @@ const createNew = async (reqBody) => {
     const createdUser = await userModel.createNew(newUser)
     const getNewUser = await userModel.findOneById(createdUser.insertedId)
     // Gửi email cho người dùng xác thực tài khoản
+    const verificationLink = `${WEBSITE_DOMAIN}/account/verification?email=${getNewUser.email}&token=${getNewUser.verifyToken}`
+    const customSubject = 'Please verify your email before using our services!'
+    const htmlContent = `
+      <h3>Here is your verification link: </h3>
+      <h3>${verificationLink}</h3>
+    `
+    await BrevoProvider.sendEmail(getNewUser.email, customSubject, htmlContent)
     // return trả về dữ liệu cho Controller
     return pickUser(getNewUser)
   } catch (error) {
