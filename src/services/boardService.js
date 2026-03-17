@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes'
 import lodash from 'lodash'
 import { columnModel } from '../models/columnModel.js'
 import { cardModel } from '../models/cardModel.js'
+import { DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE } from '../utils/constants.js'
 
 const { cloneDeep } = lodash
 
@@ -83,9 +84,23 @@ const moveCardToDifferentColumn = async (reqBody) => {
   }
 }
 
+const getBoards = async (userId, page, itemPerPage) => {
+  try {
+    if (!page) page = DEFAULT_PAGE
+    if (!itemPerPage) itemPerPage = DEFAULT_ITEMS_PER_PAGE
+
+    const result = await boardModel.getBoards(userId, parseInt(page, 10), parseInt(itemPerPage, 10))
+
+    return result
+  } catch (error) {
+    throw error
+  }
+}
+
 export const boardService = {
   createNew,
   getDetails,
   update,
-  moveCardToDifferentColumn
+  moveCardToDifferentColumn,
+  getBoards
 }
