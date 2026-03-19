@@ -6,6 +6,7 @@ import { BOARD_TYPES } from '../utils/constants.js'
 import { columnModel } from './columnModel.js'
 import { cardModel } from './cardModel.js'
 import { pagingSkipValue } from '../utils/algorithms.js'
+import { userModel } from './userModel.js'
 
 const BOARD_COLLECTION_NAME = 'boards'
 const BOARD_COLLECTION_SCHEMA = Joi.object({
@@ -88,6 +89,22 @@ const getDetails = async (userId, boardId) => {
         localField: '_id',
         foreignField: 'boardId',
         as: 'cards'
+      } },
+      { $lookup: {
+        from: userModel.USER_COLLECTION_NAME,
+        localField: 'ownerIds',
+        foreignField: '_id',
+        as: 'owners',
+        // pipeline trong lookup là để xử lý một hoặc nhiều luồng cần thiết
+        // project để chỉ định vài filed không muốn lấy về bằng cách gán nó giá trị 0
+        pipeline: [{ $project: { 'password': 0, 'verifyToken': 0 } }]
+      } },
+      { $lookup: {
+        from: userModel.USER_COLLECTION_NAME,
+        localField: 'memberIds',
+        foreignField: '_id',
+        as: 'members',
+        pipeline: [{ $project: { 'password': 0, 'verifyToken': 0 } }]
       } }
     ]).toArray()
     return result[0] || null
@@ -101,7 +118,7 @@ const pushColumnOrderIds = async (column) => {
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(column.boardId) },
       { $push: { columnOrderIds:  new ObjectId(column._id) } },
-      { ReturnDocument: 'after' }
+      { returnDocument: 'after' }
     )
 
     return result
@@ -115,7 +132,7 @@ const pullColumnOrderIds = async (column) => {
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(column.boardId) },
       { $pull: { columnOrderIds:  new ObjectId(column._id) } },
-      { ReturnDocument: 'after' }
+      { returnDocument: 'after' }
     )
 
     return result
@@ -139,7 +156,7 @@ const update = async (boardId, updateData) => {
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
       { _id: new ObjectId(boardId) },
       { $set: updateData },
-      { ReturnDocument: 'after' }
+      { returnDocument: 'after' }
     )
 
     return result
