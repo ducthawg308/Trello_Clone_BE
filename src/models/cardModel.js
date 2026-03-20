@@ -2,7 +2,6 @@ import Joi from 'joi'
 import { ObjectId } from 'mongodb'
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE, OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '../utils/validators.js'
 import { GET_DB } from '../config/mongodb.js'
-
 const CARD_COLLECTION_NAME = 'cards'
 const CARD_COLLECTION_SCHEMA = Joi.object({
   boardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
@@ -30,7 +29,7 @@ const CARD_COLLECTION_SCHEMA = Joi.object({
   _destroy: Joi.boolean().default(false)
 })
 
-const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'created_at']
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
   return await CARD_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
@@ -83,6 +82,19 @@ const update = async (cardId, updateData) => {
   }
 }
 
+const unshiftNewComment = async (cardId, commentData) => {
+  try {
+    const result = await GET_DB().collection(CARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(cardId) },
+      { $push: { comments: { $each: [commentData], $position: 0 } } },
+      { returnDocument: 'after' }
+    )
+    return result
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 const deleteManyByColumnId = async (columnId) => {
   try {
     const result = await GET_DB().collection(CARD_COLLECTION_NAME).deleteMany({
@@ -100,5 +112,6 @@ export const cardModel = {
   createNew,
   findOneById,
   update,
-  deleteManyByColumnId
+  deleteManyByColumnId,
+  unshiftNewComment
 }

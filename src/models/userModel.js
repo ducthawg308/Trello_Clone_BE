@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb'
 import { EMAIL_RULE, EMAIL_RULE_MESSAGE } from '../utils/validators.js'
 import { GET_DB } from '../config/mongodb.js'
 
-const USER_ROLE = {
+const USER_ROLES = {
   CLIENT: 'client',
   ADMIN: 'admin'
 }
@@ -16,7 +16,7 @@ const USER_COLLECTION_SCHEMA = Joi.object({
   username: Joi.string().required().trim().strict(),
   displayName: Joi.string().required().trim().strict(),
   avatar: Joi.string().default(null),
-  role: Joi.string().valid(USER_ROLE.CLIENT, USER_ROLE.ADMIN).default(USER_ROLE.CLIENT),
+  role: Joi.string().valid(...Object.values(USER_ROLES)).default(USER_ROLES.CLIENT),
 
   isActive: Joi.boolean().default(false),
   verifyToken: Joi.string(),
@@ -26,7 +26,7 @@ const USER_COLLECTION_SCHEMA = Joi.object({
   _destroy: Joi.boolean().default(false)
 })
 
-const INVALID_UPDATE_FIELDS = ['_id', 'email', 'username', 'created_at']
+const INVALID_UPDATE_FIELDS = ['_id', 'email', 'username', 'createdAt']
 
 const validateBeforeCreate = async (data) => {
   return await USER_COLLECTION_SCHEMA.validateAsync(data, { abortEarly: false })
