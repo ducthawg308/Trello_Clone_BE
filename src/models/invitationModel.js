@@ -3,6 +3,8 @@ import { ObjectId } from 'mongodb'
 import { GET_DB } from '../config/mongodb.js'
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '../utils/validators.js'
 import { INVITATION_TYPES, BOARD_INVITATION_STATUS } from '../utils/constants.js'
+import { userModel } from './userModel.js'
+import { boardModel } from './boardModel.js'
 
 const INVITATION_COLLECTION_NAME = 'invitations'
 const INVITATION_COLLECTION_SCHEMA = Joi.object({
@@ -33,6 +35,14 @@ const createNewBoardInvitation = async (data) => {
       ...validData,
       inviterId: new ObjectId(validData.inviterId),
       inviteeId: new ObjectId(validData.inviteeId)
+    }
+
+    // Nếu tồn tại dữ liệu boardInvitation thì update cho cái boardId
+    if (validData.boardInvitation) {
+      newInvitationToAdd.boardInvitation = {
+        ...validData.boardInvitation,
+        boardId: new ObjectId(validData.boardInvitation.boardId)
+      }
     }
     const createdInvitation = await GET_DB().collection(INVITATION_COLLECTION_NAME).insertOne(newInvitationToAdd)
     return createdInvitation
@@ -79,10 +89,47 @@ const update = async (invitationId, updateData) => {
   }
 }
 
+const findByUser = async (userId) => {
+  try {
+    const queryConditions = [
+      { inviteeId: new ObjectId(userId) },
+      { _destroy: false }
+    ]
+
+    const results = await GET_DB().collection(INVITATION_COLLECTION_NAME).aggregate([
+      { $match: { $and: queryConditions } },
+      { $lookup: {
+        from: userModel.USER_COLLECTION_NAME,
+        localField: 'inviterId',
+        foreignField: '_id',
+        as: 'inviter',
+        pipeline: [{ $project: { 'password': 0, 'verifyToken': 0 } }]
+      } },
+      { $lookup: {
+        from: userModel.USER_COLLECTION_NAME,
+        localField: 'inviteeId',
+        foreignField: '_id',
+        as: 'invitee',
+        pipeline: [{ $project: { 'password': 0, 'verifyToken': 0 } }]
+      } },
+      { $lookup: {
+        from: boardModel.BOARD_COLLECTION_NAME,
+        localField: 'boardInvitation.boardId',
+        foreignField: '_id',
+        as: 'board'
+      } }
+    ]).toArray()
+    return results
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
 export const invitationModel = {
   INVITATION_COLLECTION_NAME,
   INVITATION_COLLECTION_SCHEMA,
   createNewBoardInvitation,
   findOneById,
-  update
+  update,
+  findByUser
 }
